@@ -4,9 +4,11 @@ import (
 	"crypto/elliptic"
 	"crypto/sha512"
 
-	"github.com/decred/dcrd/dcrec/secp256k1"
 	"github.com/jakobvarmose/gobitmessage/varint"
 	"golang.org/x/crypto/ripemd160"
+
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	// Another possibility: https://github.com/btcsuite/btcd/blob/master/btcec/btcec.go
 )
 
 type PrivateCombo struct {
