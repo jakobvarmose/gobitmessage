@@ -31,8 +31,10 @@ func (m *Message) Sign(header, sigkey []byte) {
 	binary.Write(w, binary.BigEndian, m.Behavior)
 	w.Write(m.Combo.SigningKey[1:])
 	w.Write(m.Combo.EncryptionKey[1:])
-	varint.Write(w, m.Trials)
-	varint.Write(w, m.Extra)
+	if m.Version >= 3 {
+		varint.Write(w, m.Trials)
+		varint.Write(w, m.Extra)
+	}
 	w.Write(m.Ripe)
 	varint.Write(w, uint64(m.Encoding))
 	varint.Write(w, uint64(len(m.Contents)))
@@ -43,7 +45,7 @@ func (m *Message) Sign(header, sigkey []byte) {
 	m.Signature = crypt.PrivateKey(sigkey).Sign(w.Bytes())
 }
 
-func (m *Message) Verify(header []byte) bool {
+func (m *Message) VerifyWithAlgorithm(header []byte) (string, error) {
 	w := new(bytes.Buffer)
 	w.Write(header)
 	varint.Write(w, m.Version)
@@ -51,8 +53,10 @@ func (m *Message) Verify(header []byte) bool {
 	binary.Write(w, binary.BigEndian, m.Behavior)
 	w.Write(m.Combo.SigningKey[1:])
 	w.Write(m.Combo.EncryptionKey[1:])
-	varint.Write(w, m.Trials)
-	varint.Write(w, m.Extra)
+	if m.Version >= 3 {
+		varint.Write(w, m.Trials)
+		varint.Write(w, m.Extra)
+	}
 	w.Write(m.Ripe)
 	varint.Write(w, uint64(m.Encoding))
 	varint.Write(w, uint64(len(m.Contents)))
@@ -60,7 +64,12 @@ func (m *Message) Verify(header []byte) bool {
 	varint.Write(w, uint64(len(m.Ack)))
 	w.Write(m.Ack)
 
-	return m.Combo.SigningKey.Verify(w.Bytes(), m.Signature) == nil
+	return m.Combo.SigningKey.VerifyWithAlgorithm(w.Bytes(), m.Signature)
+}
+
+func (m *Message) Verify(header []byte) bool {
+	_, err := m.VerifyWithAlgorithm(header)
+	return err != nil
 }
 
 func (m *Message) Marshal() []byte {
@@ -70,8 +79,10 @@ func (m *Message) Marshal() []byte {
 	binary.Write(w, binary.BigEndian, m.Behavior)
 	w.Write(m.Combo.SigningKey[1:])
 	w.Write(m.Combo.EncryptionKey[1:])
-	varint.Write(w, m.Trials)
-	varint.Write(w, m.Extra)
+	if m.Version >= 3 {
+		varint.Write(w, m.Trials)
+		varint.Write(w, m.Extra)
+	}
 	w.Write(m.Ripe)
 	varint.Write(w, uint64(m.Encoding))
 	varint.Write(w, uint64(len(m.Contents)))
@@ -93,8 +104,13 @@ func (m *Message) Unmarshal(data []byte) {
 	m.Combo.EncryptionKey = make([]byte, 65)
 	m.Combo.EncryptionKey[0] = 0x04
 	io.ReadFull(r, m.Combo.EncryptionKey[1:])
-	m.Trials, _ = varint.Read(r)
-	m.Extra, _ = varint.Read(r)
+	if m.Version >= 3 {
+		m.Trials, _ = varint.Read(r)
+		m.Extra, _ = varint.Read(r)
+	} else {
+		m.Trials = 1000
+		m.Extra = 1000
+	}
 	m.Ripe = make([]byte, 20)
 	io.ReadFull(r, m.Ripe)
 	encoding, _ := varint.Read(r)

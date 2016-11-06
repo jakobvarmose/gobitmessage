@@ -12,8 +12,8 @@ import (
 type Ripe []byte
 
 type Address struct {
-	Stream  uint64
 	Version uint64
+	Stream  uint64
 	Ripe    Ripe
 }
 
@@ -35,10 +35,17 @@ func NewAddress(text string) (*Address, error) {
 	return a, nil
 }
 
-func (a *Address) String() string {
+func (a Address) String() string {
 	var b bytes.Buffer
 	varint.Write(&b, a.Version)
 	varint.Write(&b, a.Stream)
-	b.Write(bytes.TrimLeft(a.Ripe, "\x00"))
+	if a.Version == 2 || a.Version == 3 {
+		b.Write(bytes.TrimLeft(a.Ripe[:2], "\x00"))
+		b.Write(a.Ripe[2:])
+	} else if a.Version == 4 {
+		b.Write(bytes.TrimLeft(a.Ripe, "\x00"))
+	} else {
+		b.Write(a.Ripe)
+	}
 	return "BM-" + base58.EncodeBM(b.Bytes())
 }

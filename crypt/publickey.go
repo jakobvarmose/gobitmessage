@@ -21,14 +21,19 @@ import (
 type PublicKey []byte
 
 func (p PublicKey) Verify(data, signature []byte) error {
+	_, err := p.VerifyWithAlgorithm(data, signature)
+	return err
+}
+
+func (p PublicKey) VerifyWithAlgorithm(data, signature []byte) (string, error) {
 	curve := secp256k1.S256()
 	rs := make([]*big.Int, 2)
 	rest, err := asn1.Unmarshal(signature, &rs)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if len(rest) > 0 {
-		return errors.New("Extra data after signature")
+		return "", errors.New("Extra data after signature")
 	}
 	key := new(ecdsa.PublicKey)
 	key.Curve = curve
@@ -38,10 +43,11 @@ func (p PublicKey) Verify(data, signature []byte) error {
 	if !ecdsa.Verify(key, hash[:], rs[0], rs[1]) {
 		hash2 := sha256.Sum256(data)
 		if !ecdsa.Verify(key, hash2[:], rs[0], rs[1]) {
-			return errors.New("Invalid signature")
+			return "", errors.New("Invalid signature")
 		}
+		return "sha256", nil
 	}
-	return nil
+	return "sha1", nil
 }
 
 func aesEncrypt(message, key1, key2, iv []byte) []byte {

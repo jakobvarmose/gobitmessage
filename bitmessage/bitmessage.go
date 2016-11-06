@@ -123,7 +123,7 @@ func main() {
 					msg.Unmarshal(decrypted)
 					var simple types.Simple
 					simple.Unmarshal(msg.Contents)
-					address := crypt.Address{msg.Stream, msg.Version, msg.Combo.Ripe()}
+					address := crypt.Address{msg.Version, msg.Stream, msg.Combo.Ripe()}
 					logrus.Infof("%s: %s", address.String(), simple.Subject)
 				}
 			}
