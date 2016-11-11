@@ -1,0 +1,9 @@
+[submodule "vendor/github.com/Sirupsen/logrus"]
+	path = vendor/github.com/Sirupsen/logrus
+	url = https://github.com/Sirupsen/logrus
+[submodule "vendor/github.com/ethereum/go-ethereum"]
+	path = vendor/github.com/ethereum/go-ethereum
+	url = https://github.com/ethereum/go-ethereum
+[submodule "vendor/golang.org/x/crypto"]
+	path = vendor/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto
