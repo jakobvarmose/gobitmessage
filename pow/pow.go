@@ -45,3 +45,22 @@ func Compute(ctx context.Context, data []byte, trials int, extra int) error {
 		return nil
 	}
 }
+
+func Verify(data []byte, trials int, extra int) bool {
+	ttl := int64(binary.BigEndian.Uint64(data[8:16])) - (time.Now().Unix() + 3600 /*PyBitmessage does not add this, but I think it should*/)
+	if ttl < 300 {
+		ttl = 300
+	}
+	target := uint64(math.Pow(2, 64) / (float64(trials) * (float64(len(data)) + float64(extra) + (float64(ttl)*(float64(len(data))+float64(extra)))/math.Pow(2, 16))))
+	initial := sha512.Sum512(data[8:])
+	buffer := make([]byte, 8+64)
+	copy(buffer[:8], data[:8])
+	copy(buffer[8:], initial[:])
+	hash1 := sha512.Sum512(buffer)
+	hash2 := sha512.Sum512(hash1[:])
+	value := binary.BigEndian.Uint64(hash2[:8])
+	if value <= target {
+		return true
+	}
+	return false
+}

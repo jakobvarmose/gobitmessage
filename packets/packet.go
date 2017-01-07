@@ -27,7 +27,8 @@ type Packet struct {
 	Payload []byte
 }
 
-func Write(w io.Writer, p Packet) {
+func Write(w2 io.Writer, p Packet) {
+	w := new(bytes.Buffer)
 	binary.Write(w, binary.BigEndian, uint32(0xe9beb4d9))
 	command := make([]byte, 12)
 	copy(command, p.Command)
@@ -37,6 +38,7 @@ func Write(w io.Writer, p Packet) {
 	h.Write(p.Payload)
 	w.Write(h.Sum(nil)[:4])
 	w.Write(p.Payload)
+	w2.Write(w.Bytes())
 }
 
 func Read(r io.Reader) (*Packet, error) {
@@ -190,10 +192,12 @@ func (a *Addr) Unmarshal(b []byte) error {
 	for i := uint64(0); i < size; i++ {
 		address := Address{}
 		binary.Read(r, binary.BigEndian, &address.Time)
-		binary.Read(r, binary.BigEndian, &address.Time)
+		binary.Read(r, binary.BigEndian, &address.Stream)
 		binary.Read(r, binary.BigEndian, &address.Services)
+		address.IP = make([]byte, 16)
 		io.ReadFull(r, address.IP)
 		binary.Read(r, binary.BigEndian, &address.Port)
+		(*a)[i] = address
 	}
 	return nil
 }

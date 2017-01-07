@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"crypto/sha512"
 	"encoding/binary"
 	"io"
 
@@ -124,4 +125,12 @@ func (m *Message) Unmarshal(data []byte) {
 	signatureSize, _ := varint.Read(r)
 	m.Signature = make([]byte, signatureSize)
 	io.ReadFull(r, m.Signature)
+}
+
+func (m *Message) SigHash() []byte {
+	h1 := sha512.New()
+	h1.Write(m.Signature)
+	h2 := sha512.New()
+	h2.Write(h1.Sum(nil))
+	return h2.Sum(nil)[32:]
 }
